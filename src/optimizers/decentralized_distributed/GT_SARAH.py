@@ -6,7 +6,7 @@ except ImportError:
     import numpy as xp
 
 from src.optimizers import Optimizer
-
+import numpy as np
 
 class GT_SARAH(Optimizer):
     '''A near-optimal stochastic gradient method for decentralized non-convex finite-sum optimization, https://arxiv.org/abs/2008.07428'''

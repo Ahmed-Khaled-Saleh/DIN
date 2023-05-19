@@ -8,7 +8,6 @@ except ImportError:
 from src.optimizers import Optimizer
 import numpy as np
 
-
 class EXTRA(Optimizer):
     '''EXTRA: AN EXACT FIRST-ORDER ALGORITHM FOR DECENTRALIZED CONSENSUS OPTIMIZATION, https://arxiv.org/pdf/1404.6264.pdf'''
 

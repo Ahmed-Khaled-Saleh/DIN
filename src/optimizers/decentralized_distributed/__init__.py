@@ -9,3 +9,4 @@ from src.optimizers.decentralized_distributed.NIDS import NIDS
 from src.optimizers.decentralized_distributed.GT_SARAH import GT_SARAH
 from src.optimizers.decentralized_distributed.CHOCO_SGD import CHOCO_SGD
 from src.optimizers.decentralized_distributed.D2 import D2
+from src.optimizers.decentralized_distributed.DIN import DIN

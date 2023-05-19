@@ -259,7 +259,11 @@ class LogisticRegression(Problem):
 
 
         else:
-            log.fatal('Parameter dimension should only be 1 for hessian')
+            if i is None and j is None:  # Return the distributed Hessian
+                tmp = logit_2d(self.X, w) * (1 - logit_2d(self.X, w))
+                return np.einsum('ikj,ikl->lj', np.einsum('ikj,ik->ikj', self.X, tmp), self.X) / self.m + np.eye(self.dim) * self.LAMBDA
+            #log.fatal('Parameter dimension should only be 1 for hessian')
+
 
 
 

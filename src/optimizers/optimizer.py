@@ -21,7 +21,7 @@ class Optimizer(object):
     '''The base optimizer class, which handles logging, convergence/divergence checking.'''
 
     def __init__(self, p, n_iters=200, x_0=None, W=None, save_metric_frequency=1, is_distributed=True, extra_metrics=[], early_stopping=True, grad_eps=eps, var_eps=eps, f_eps=eps*eps):
-
+        #import pdb; pdb.set_trace()
         self.name = self.__class__.__name__
         self.p = p
         self.n_iters = n_iters
