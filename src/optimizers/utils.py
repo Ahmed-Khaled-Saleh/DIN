@@ -6,6 +6,7 @@ try:
     import cupy as xp
 except ImportError:
     import numpy as xp
+from src import log
 
 import networkx as nx
 import cvxpy as cvx
@@ -33,6 +34,45 @@ def NAG(grad, x_0, L, sigma, n_iters=100, eps=eps):
         x = r_1*y - r_2*y_last
 
     return y, t
+
+
+
+def StandardNewton(p, x0, eps=1e-6, n_iters=100,regularization_param= 0.001):
+    """
+    Solves the equation f(x) = 0 using Newton's method with the Hessian for the logistic function.
+
+    Args:
+        x0: The initial guess.
+        epsilon: The tolerance for convergence.
+        max_iter: The maximum number of iterations.
+
+    Returns:
+        The root of the equation f(x) = 0.
+    """
+
+
+    for i in range(n_iters):
+        # compute the gradient and Hessian
+        g = p.grad_new(x0)
+        h = p.hessian(x0)
+
+        # update the weights
+        x1 = x0 - np.linalg.inv(h) @ g
+
+        # check for convergence
+        if np.linalg.norm(g) < eps:
+            log.info("Converged because gradient norm is less than {}".format(eps))
+            return x1, i + 1
+
+        if np.linalg.norm(x1 - x0) < eps:
+            log.info("Converged because weight change norm is less than {}".format(eps))
+            return x1, i + 1
+        
+        
+        x0 = x1
+
+    return x1, n_iters
+
 
 
 def GD(grad, x_0, eta, n_iters=100, eps=eps):

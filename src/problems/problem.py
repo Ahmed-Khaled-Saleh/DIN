@@ -4,6 +4,7 @@ import numpy as np
 
 import networkx as nx
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 from src import log
 from src.data.data_downloader import LibSVM, MNIST
 
@@ -81,6 +82,14 @@ class Problem(object):
 
         elif regularization == 'l2':
             self.grad_g = self._grad_regularization_l2
+
+
+    def normalize(self):
+
+        scaler = StandardScaler()
+        self.X_train = scaler.fit(self.X_train).transform(self.X_train)
+        self.X_test = scaler.transform(self.X_test)
+
 
     def cuda(self):
         log.debug("Copying data to GPU")
@@ -303,25 +312,35 @@ class Problem(object):
         else:
             return False
 
-    def generate_graph(self, graph_type='expander', params=None):
+    def generate_graph(self, graph_type='binomial', params=None):
         '''Generate connected connectivity graph according to the params.'''
 
-        if graph_type == 'expander':
-            G = nx.paley_graph(self.n_agent).to_undirected()
-        elif graph_type == 'grid':
-            G = nx.grid_2d_graph(*params)
-        elif graph_type == 'cycle':
-            G = nx.cycle_graph(self.n_agent)
-        elif graph_type == 'path':
-            G = nx.path_graph(self.n_agent)
-        elif graph_type == 'star':
-            G = nx.star_graph(self.n_agent - 1)
-        elif graph_type == 'er':
+
+        def erdos(params):
             if params < 2 / (self.n_agent - 1):
                 log.fatal("Need higher probability to create a connected E-R graph!")
             G = None
             while G is None or nx.is_connected(G) is False:
-                G = nx.erdos_renyi_graph(self.n_agent, params)
+                return nx.erdos_renyi_graph(self.n_agent, params)
+
+
+        graph_types = {
+            'expander': nx.paley_graph(self.n_agent).to_undirected(),
+            # 'grid': nx.grid_2d_graph(params, params),
+            'cycle': nx.cycle_graph(self.n_agent),
+            'path': nx.path_graph(self.n_agent),
+            'star': nx.star_graph(self.n_agent - 1),
+            'binomial': erdos(params),
+            'complete': nx.complete_graph(self.n_agent),
+            'line': nx.path_graph(self.n_agent),
+            'geometric': nx.random_geometric_graph(self.n_agent, params),
+            }
+
+
+        
+        
+        if graph_type in graph_types:
+            G = graph_types[graph_type]
         else:
             log.fatal('Graph type %s not supported' % graph_type)
 

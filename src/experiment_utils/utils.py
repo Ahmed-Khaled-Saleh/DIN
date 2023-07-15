@@ -125,6 +125,26 @@ def run_exp(exps, kappa=None, max_iter=None, name=None, save=False, plot=True, n
     return res
 
 
+import timeit
+import csv
+
+def benchmarking(fun, opt_name, ite):
+    
+    time_function_1 = timeit.timeit(fun, globals=globals(), number=1)
+
+    if ite == 1:
+        with open(f'./reports/{opt_name}_benchmark_results.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Iteration', 'Execution Time'])
+
+    with open(f'./reports/{opt_name}_benchmark_results.csv', 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([ite, time_function_1])
+        
+
+
+
+
 def plot_results(results, m_total, kappa=None, max_iter=None, name=None, save=False):
 
     if kappa is not None:
@@ -132,8 +152,8 @@ def plot_results(results, m_total, kappa=None, max_iter=None, name=None, save=Fa
     else:
         fig_path = r'./reports/figs/' + str(name)
 
-    plot_iters(results, fig_path, kappa=kappa, max_iter=max_iter, save=save)
-    plot_grads(results, fig_path, m_total, kappa=kappa, max_iter=max_iter, save=save)
+    # plot_iters(results, fig_path, kappa=kappa, max_iter=max_iter, save=save)
+    # plot_grads(results, fig_path, m_total, kappa=kappa, max_iter=max_iter, save=save)
 
     if any(['comm_rounds' in res[1].columns for res in results]):
         plot_comms(results, fig_path, kappa=kappa, max_iter=max_iter, save=save)
@@ -145,11 +165,11 @@ def plot_iters(results, path=None, kappa=None, max_iter=None, save=False):
     legends = []
 
     if any(['var_error' in result.columns for name, result in results]):
-        plt.figure()
+        plt.figure(figsize=(10, 8))
         for (name, result), style in zip(results, LINE_STYLES()):
             if 'var_error' in result.columns:
                 legends.append(name)
-                plt.loglog(result.t, result.var_error, style)
+                plt.plot(result.t, result.var_error, style)
         plt.ylabel(r"$\frac{f({\bar{\mathbf{x}}}^{(t)}) - f({\mathbf{x}}^\star)}{f({\mathbf{x}}^\star)}$")
         plt.xlabel('#outer iterations')
 
@@ -157,19 +177,19 @@ def plot_iters(results, path=None, kappa=None, max_iter=None, save=False):
             plt.title(r"$\kappa$ = " + str(int(kappa)))
         plt.legend(legends)
         if save is True:
-            plt.savefig(path + '_var_iter.eps', format='eps')
+            plt.savefig(path + '_var_iter.png', format='png')
 
     # iters vs. f
     legends = []
     if max_iter is None:
         max_iter = min([res[1].t.iloc[-1] for res in results])
 
-    plt.figure()
+    plt.figure(figsize=(10, 8))
     for (name, result), style in zip(results, LINE_STYLES()):
         legends.append(name)
         mask = result.t <= max_iter
         result = result.loc[mask]
-        plt.loglog(result.t, result.f, style)
+        plt.plot(result.t, result.f, style)
     # plt.title('Function value error vs. #outer iterations')
     plt.ylabel(r"Loss")
     plt.xlabel('#outer iterations')
@@ -177,41 +197,44 @@ def plot_iters(results, path=None, kappa=None, max_iter=None, save=False):
         plt.title(r"$\kappa$ = " + str(int(kappa)))
     plt.legend(legends)
     if save is True:
-        plt.savefig(path + '_fval_iter.eps', format='eps')
+        plt.savefig(path + '_fval_iter.png', format='png')
 
 
 def plot_comms(results, path, kappa=None, max_iter=None, save=False):
 
     if any(['var_error' in result.columns for name, result in results]):
         legends = []
-        plt.figure()
+        plt.figure(figsize=(10, 8))
+        plt.yscale('log')
+        plt.grid(True, which="both", ls="-", color='0.65')
         for (name, data), style in zip(results, LINE_STYLES()):
             if 'var_error' in data.columns and 'comm_rounds' in data.columns:
                 legends.append(name)
-                plt.loglog(data.comm_rounds, data.var_error, style)
+                plt.plot(data.comm_rounds, data.var_error, style)
+                
 
-        plt.ylabel(r"$\frac{\Vert {\bar{\mathbf{x}}}^{(t)} - {\mathbf{x}}^\star \Vert}{\Vert {\mathbf{x}}^\star \Vert}$")
-        plt.xlabel('#communication rounds')
+        plt.ylabel(r"Optimality gap")
+        plt.xlabel(r'#communication rounds')
         if kappa is not None:
             plt.title(r"$\kappa$ = " + str(int(kappa)))
         plt.legend(legends)
         if save is True:
-            plt.savefig(path + '_var_comm.eps', format='eps')
+            plt.savefig(path + '_var_comm.png', format='png')
 
     legends = []
-    plt.figure()
-    for (name, data), style in zip(results, LINE_STYLES()):
-        if 'comm_rounds' in data.columns:
-            legends.append(name)
-            plt.semilogy(data.comm_rounds, data.f, style)
-    # plt.title('Function value error vs. #communications')
-    plt.ylabel(r"Loss")
-    plt.xlabel('#communication rounds')
-    if kappa is not None:
-        plt.title(r"$\kappa$ = " + str(int(kappa)))
-    plt.legend(legends)
-    if save is True:
-        plt.savefig(path + '_fval_comm.eps', format='eps')
+    # plt.figure(figsize=(10, 8))
+    # for (name, data), style in zip(results, LINE_STYLES()):
+    #     if 'comm_rounds' in data.columns:
+    #         legends.append(name)
+    #         plt.plot(data.comm_rounds, data.f, style)
+    # # plt.title('Function value error vs. #communications')
+    # plt.ylabel(r"Loss")
+    # plt.xlabel('#communication rounds')
+    # if kappa is not None:
+    #     plt.title(r"$\kappa$ = " + str(int(kappa)))
+    # plt.legend(legends)
+    # if save is True:
+    #     plt.savefig(path + '_fval_comm.png', format='png')
 
 
 def plot_grads(results, path, m, kappa=None, max_iter=None, save=False):
@@ -222,7 +245,7 @@ def plot_grads(results, path, m, kappa=None, max_iter=None, save=False):
         plt.figure()
         for (name, data), style in zip(results, LINE_STYLES()):
             if 'var_error' in data.columns:
-                plt.loglog(data.n_grads / m, data.var_error, style)
+                plt.plot(data.n_grads / m, data.var_error, style)
                 legends.append(name)
         # plt.title('Variable error vs. #gradient evaluations')
         plt.ylabel(r"$\frac{\Vert {\bar{\mathbf{x}}}^{(t)} - {\mathbf{x}}^\star \Vert}{\Vert {\mathbf{x}}^\star \Vert}$")
@@ -231,13 +254,13 @@ def plot_grads(results, path, m, kappa=None, max_iter=None, save=False):
             plt.title(r"$\kappa$ = " + str(int(kappa)))
         plt.legend(legends)
         if save is True:
-            plt.savefig(path + '_var_grads.eps', format='eps')
+            plt.savefig(path + '_var_grads.png', format='png')
 
     # n_grads vs. f
     legends = []
     plt.figure()
     for (name, data), style in zip(results, LINE_STYLES()):
-        plt.loglog(data.n_grads / m, data.f, style)
+        plt.plot(data.n_grads / m, data.f, style)
         legends.append(name)
     # plt.title('Function value error vs. #gradient evaluations')
     plt.ylabel(r"Loss")
@@ -246,4 +269,4 @@ def plot_grads(results, path, m, kappa=None, max_iter=None, save=False):
         plt.title(r"$\kappa$ = " + str(int(kappa)))
     plt.legend(legends)
     if save is True:
-        plt.savefig(path + '_fval_grads.eps', format='eps')
+        plt.savefig(path + '_fval_grads.png', format='png')

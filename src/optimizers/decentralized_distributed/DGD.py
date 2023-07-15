@@ -12,4 +12,6 @@ class DGD(Optimizer):
 
     def update(self):
         self.comm_rounds += 1
-        self.x = self.x.dot(self.W) - self.eta * self.grad(self.x)
+        for i in range(self.p.n_agent):
+            self.x[:, i] = self.x[:, i] - self.eta * self.p.grad_new(self.x[:, i], i=i)
+

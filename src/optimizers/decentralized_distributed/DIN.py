@@ -5,7 +5,7 @@ from numpy.linalg import pinv, inv
 import numpy as np
 import networkx as nx
 
-class DIN(Optimizer):
+class DINSerial(Optimizer):
 
     def __init__(self, p, **kwargs):
 
@@ -20,6 +20,7 @@ class DIN(Optimizer):
         self.nodes_degrees = np.sum(self.adj_matr, axis=1)
 
         self.d = np.zeros_like(self.x)
+        self.d_prev = np.zeros_like(self.x)
         self.lambda_ = np.zeros_like(self.x)
         self.ds = np.zeros_like(self.x)
         self.ds_prev = np.zeros_like(self.x)
@@ -51,26 +52,27 @@ class DIN(Optimizer):
         for i in range(self.p.n_agent):
             
             node_model = self.x[:, i]
-            node_grad = self.grad(node_model, i= i)
-            node_hessian = self.hessian(node_model, i= i)
+            node_grad = self.p.grad_new(node_model, i= i)
+            node_hessian = self.p.hessian(node_model, i= i)
             node_degree = self.nodes_degrees[i]
             node_hessian_alpha = node_hessian + ((2 * self.rho * node_degree + self.alpha) * np.eye(node_hessian.shape[0]))
-
-            # compute the sum of each neighbours direction of the last iteration
-            self.ds[:, i] = self.d.dot(self.adj_matr[i, :].T)
-
+        
             # Compute the Newton direction for each node separately
-            self.d[:, i] = inv(node_hessian_alpha) @ (node_grad - self.lambda_[:, i] + self.rho * (node_degree * self.d[:, i] + self.ds[:, i]))
+            self.d[:, i] = inv(node_hessian_alpha) @ (node_grad - self.lambda_[:, i] + self.rho * (node_degree * self.d_prev[:, i] + self.ds_prev[:, i]))
             
-            # compute the sum of each neighbours direction of the last iteration           
-            self.ds[:, i] = self.d.dot(self.adj_matr[i, :].T)
-
             # Update the dual variable for each node separately
             self.lambda_[:, i] = self.lambda_[:, i] + self.rho * (node_degree * self.d[:, i] - self.ds[:, i])
 
             # Update the local model for each node separately
             self.x[:, i] = self.x[:, i] - self.d[:, i]
 
+            # compute the sum of each neighbours direction of the last iteration
+            self.ds_prev = self.ds
+            self.ds = self.d.dot(self.adj_matr.T)
+            self.d_prev = self.d
+            
+            
+
         # Communicate the updated local model
-        #self.x = self.x.dot(self.W)
+        # self.x = self.x.dot(self.W)
         

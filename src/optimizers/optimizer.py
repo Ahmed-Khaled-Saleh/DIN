@@ -17,6 +17,8 @@ def relative_error(w, w_0):
     return norm(w - w_0) / norm(w_0)
 
 
+
+
 class Optimizer(object):
     '''The base optimizer class, which handles logging, convergence/divergence checking.'''
 
@@ -149,6 +151,10 @@ class Optimizer(object):
             res = self.f(x, split='test')
         elif metric_name == 'var_error':
             res = relative_error(x, self.p.x_min)
+            res = self.p.f(x) - self.p.f_min
+            # res = self.f(self.p.x_min) - self.p.x_min
+        elif metric_name == "opt_gap":
+            res = abs(self.f(x) - self.f(self.p.x_min))
         elif metric_name == 'train_accuracy':
             acc = self.p.accuracy(x, split='train')
             if type(acc) is tuple:
@@ -182,6 +188,7 @@ class Optimizer(object):
         )
 
     def get_metrics(self):
+        log.info('metrics are: {}'.format(self.metric_names))
         self.metrics = [[_metric.item() if type(_metric) is xp.array else _metric for _metric in _metrics] for _metrics in self.metrics]
         return self.metric_names, np.array(self.metrics)
 
@@ -192,21 +199,25 @@ class Optimizer(object):
 
         self.init()
 
-        # Initial value
-        self.save_metrics()
-
+        # import eco2ai
+        # tracker = eco2ai.Tracker(project_name="DINParallel", experiment_description="training the DINPArallel model", alpha_2_code= "EG")
+        # tracker.start()
+        # # Initial value
+        # self.save_metrics()
+        # from src.experiment_utils import benchmarking
         for self.t in range(1, self.n_iters + 1):
 
             # The actual update step for optimization variable
-            self.update()
             
+            self.update()
+
             self.save_metrics()
 
-            if self.early_stopping is True and self.check_stopping_conditions() is True:
-                break
+            # if self.early_stopping is True and self.check_stopping_conditions() is True:
+            #     break
 
         # endfor
-
+        # tracker.stop()
         return self.get_metrics()
 
     def check_stopping_conditions(self):
